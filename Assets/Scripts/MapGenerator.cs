@@ -4,55 +4,58 @@ using UnityEngine;
 
 public class MapGenerator : MonoBehaviour
 {
-    public enum DrawMode { NoiseMap, ColorMap, Mesh};
+    public enum DrawMode { NoiseMap, ColorMap, Mesh, Object };
     public DrawMode drawMode;
+    [Range(18, 28)]
+    public int MeshHeight;
     public int MapWidth;
     public int MapLength;
     public int Seed;
     public float Scale;
     public bool AutoUpdate;
+    public bool FallOff;
+    [Range(1, 10)]
+    public int FallOffSpread;
     [Range(0, 10)]
     public int Octaves;
     [Range(0, 1)]
     public float Persistance;
     public float Lacunarity;
     public Vector2 Offset;
+    [Header("Generate Objects")]
+    public bool Trees;
+    public bool Rocks;
+    [Header("Region Colors")]
     public TerrainType[] regions;
+
 
     public void GenerateMap()
     {
         float[,] noiseMap = Noise.generateNoiseMap(MapLength, MapWidth, Seed, Scale, Octaves, Persistance, Lacunarity, Offset);
 
+        if (FallOff) { AddFalloffEfect(noiseMap); }
         MapDisplay mapDisplay = FindObjectOfType<MapDisplay>();
+
         if (drawMode == DrawMode.NoiseMap)
         {
-            mapDisplay.drawTexture(TextureGenerator.heightMapToTexture(noiseMap,MapWidth,MapLength));
-        }else if(drawMode == DrawMode.ColorMap){
-            Color[] colorMap = new Color[MapWidth * MapLength];
-            for (int z = 0; z < MapLength; z++)
-            {
-                for (int x = 0; x < MapWidth; x++)
-                {
-                    float currentHeight = noiseMap[x, z];
-                    for (int i = 0; i < regions.Length; i++)
-                    {
-                        if (currentHeight <= regions[i].Height)
-                        {
-                            if(regions[i].BlendColors && i<regions.Length-1){
-                                colorMap[z * MapWidth + x] = Color.Lerp(regions[i].Color, regions[i+1].Color, noiseMap[x, z]);
-                            }
-                            else
-                            {
-                                colorMap[z * MapWidth + x] = regions[i].Color;
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-            mapDisplay.drawTexture(TextureGenerator.colorMapToTexture(colorMap, MapWidth, MapLength));
-        }else if(drawMode == DrawMode.Mesh){
-            mapDisplay.drawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap), TextureGenerator.heightMapToTexture(noiseMap, MapWidth, MapLength));
+            mapDisplay.drawTexture(TextureGenerator.heightMapToTexture(noiseMap, MapWidth, MapLength));
+        }
+        else if (drawMode == DrawMode.ColorMap)
+        {
+            mapDisplay.drawTexture(TextureGenerator.colorMapToTexture(noiseMap, MapWidth, MapLength, regions, MeshHeight));
+        }
+        else if (drawMode == DrawMode.Mesh)
+        {
+            Texture2D texture = TextureGenerator.colorMapToTexture(noiseMap, MapWidth, MapLength, regions, MeshHeight);
+            mapDisplay.drawTexture(texture);
+            mapDisplay.drawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap, MeshHeight), texture);
+        }
+        else if (drawMode == DrawMode.Object)
+        {
+            Texture2D texture = TextureGenerator.colorMapToTexture(noiseMap, MapWidth, MapLength, regions, MeshHeight);
+            mapDisplay.drawTexture(texture);
+            mapDisplay.drawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap, MeshHeight), texture);
+
         }
     }
 
@@ -73,5 +76,32 @@ public class MapGenerator : MonoBehaviour
         public Color Color;
         public bool BlendColors;
 
+    }
+
+    public void AddFalloffEfect(float[,] nMap)
+    {
+        int length = nMap.GetLength(0);
+        int width = nMap.GetLength(1);
+        for (int z = 0; z < length; z++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float i = 1 - ((2 * x) / (float)width);
+                float j = 1 - ((2 * z) / (float)length);
+
+                float val = Mathf.Max(Mathf.Abs(i), Mathf.Abs(j));
+                float FOval = getFalloffValue(val);
+                nMap[x, z] = Mathf.Clamp01(nMap[x, z] - FOval);
+            }
+        }
+
+    }
+
+    public float getFalloffValue(float value)
+    {
+        float a = 3;
+        float b = FallOffSpread;
+
+        return Mathf.Pow(value, a) / (Mathf.Pow(value, a) + Mathf.Pow(b - b * value, a));
     }
 }
