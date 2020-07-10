@@ -16,7 +16,7 @@ public class MapGenerator : MonoBehaviour
     public bool FallOff;
     [Range(1, 10)]
     public int FallOffSpread;
-    [Range(0, 10)]
+    [Range(1, 10)]
     public int Octaves;
     [Range(0, 1)]
     public float Persistance;
@@ -24,13 +24,25 @@ public class MapGenerator : MonoBehaviour
     public Vector2 Offset;
     [Header("Generate Objects")]
     public bool Trees;
-    public bool Rocks;
+    public enum TreeCount { None, Low, Medium, High };
+    public TreeCount treeCount;
+    Hashtable treeCountNumber = new Hashtable()
+                {{ TreeCount.None, 0 }, { TreeCount.Low, 40 }, { TreeCount.Medium, 90 }, { TreeCount.High, 200 }};
+
+    public GameObject[] TreePrefabs;
+    public bool Others;
+    public enum OthersCount { None, Low, Medium, High };
+    public OthersCount otherCount;
+    Hashtable otherCountNumber = new Hashtable()
+                {{ OthersCount.None, 0 }, { OthersCount.Low, 10 }, { OthersCount.Medium, 22 }, { OthersCount.High, 50 }};
+    public GameObject[] OtherPrefabs;
     [Header("Region Colors")]
     public TerrainType[] regions;
 
 
     public void GenerateMap()
     {
+        clearPlacedObjects();
         float[,] noiseMap = Noise.generateNoiseMap(MapLength, MapWidth, Seed, Scale, Octaves, Persistance, Lacunarity, Offset);
 
         if (FallOff) { AddFalloffEfect(noiseMap); }
@@ -48,13 +60,21 @@ public class MapGenerator : MonoBehaviour
         {
             Texture2D texture = TextureGenerator.colorMapToTexture(noiseMap, MapWidth, MapLength, regions, MeshHeight);
             mapDisplay.drawTexture(texture);
-            mapDisplay.drawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap, MeshHeight), texture);
+            mapDisplay.drawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap, MeshHeight));
         }
         else if (drawMode == DrawMode.Object)
         {
             Texture2D texture = TextureGenerator.colorMapToTexture(noiseMap, MapWidth, MapLength, regions, MeshHeight);
             mapDisplay.drawTexture(texture);
-            mapDisplay.drawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap, MeshHeight), texture);
+            MeshData meshData = MeshGenerator.GenerateTerrainMesh(noiseMap, MeshHeight);
+            mapDisplay.drawMesh(meshData);
+            placeObjects(meshData);
+            // placeObjects(meshData, (MapWidth*MapLength)-1);
+            // placeObjects(meshData, (MapWidth)-1);
+            // placeObjects(meshData, MapWidth);
+            // placeObjects(meshData, 30*MapWidth+60);
+
+
 
         }
     }
@@ -103,5 +123,54 @@ public class MapGenerator : MonoBehaviour
         float b = FallOffSpread;
 
         return Mathf.Pow(value, a) / (Mathf.Pow(value, a) + Mathf.Pow(b - b * value, a));
+    }
+
+    public void clearPlacedObjects()
+    {
+        GameObject veg = GameObject.Find("Vegitation");
+        int childCount = veg.transform.childCount;
+        for (int m = 0; m < childCount; m++)
+        {
+            DestroyImmediate(veg.transform.GetChild(0).gameObject);
+        }
+        GameObject oth = GameObject.Find("OtherObjects");
+        int childObCount = oth.transform.childCount;
+        for (int m = 0; m < childObCount; m++)
+        {
+            DestroyImmediate(oth.transform.GetChild(0).gameObject);
+        }
+    }
+
+    public void placeObjects(MeshData md)
+    {
+        System.Random rand = new System.Random();
+        int m = 0,n = 0;
+        while (m < (int)(treeCountNumber[treeCount]) || n < (int)(otherCountNumber[otherCount]))
+        {
+            int val = rand.Next(10000);
+            float x = md.vertices[val].x;
+            float z = md.vertices[val].z;
+            float y = md.vertices[val].y;
+
+            float originalX = (100 * (x-0.5f));
+            float originalZ = 100 * (z-0.5f);
+
+            if (y > 11 && m < (int)(treeCountNumber[treeCount]))
+            {
+                int vegIndex = rand.Next(TreePrefabs.Length);
+                GameObject go = Instantiate(TreePrefabs[vegIndex], new Vector3(originalX, (50 * y)-10, originalZ), Quaternion.identity);
+                go.transform.localScale = go.transform.localScale * 10;
+                go.transform.parent = GameObject.Find("Vegitation").transform;
+                m++;
+            }else if (y < 10 && n < (int)(otherCountNumber[otherCount]))
+            {
+                int otherIndex = rand.Next(OtherPrefabs.Length);
+                GameObject go = Instantiate(OtherPrefabs[otherIndex], new Vector3(originalX, (50 * 10) - 10, originalZ), Quaternion.identity);
+                go.transform.localScale = go.transform.localScale * 10;
+                go.transform.parent = GameObject.Find("OtherObjects").transform;
+                n++;
+            }
+
+        }
     }
 }
