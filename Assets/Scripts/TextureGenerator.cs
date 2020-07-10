@@ -45,8 +45,15 @@ public static class TextureGenerator
             for (int x = 0; x < width; x++)
             {
                 float currentHeight = noiseMap[x, z];
+                // if (x < 20 && x > 18 && z < 50 && z > 48)
+                // {
+                //     Debug.Log(currentHeight);
+                //     colorMap[z * width + x] = Color.red;
+                //     continue;
+                // }
                 for (int i = 0; i < regions.Length; i++)
                 {
+                
                     if (currentHeight <= (regions[i].Height) * 20 / meshHeight)
                     {
                         if (regions[i].BlendColors && i < regions.Length - 1)
