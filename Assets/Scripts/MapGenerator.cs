@@ -36,6 +36,11 @@ public class MapGenerator : MonoBehaviour
     Hashtable otherCountNumber = new Hashtable()
                 {{ OthersCount.None, 0 }, { OthersCount.Low, 10 }, { OthersCount.Medium, 22 }, { OthersCount.High, 50 }};
     public GameObject[] OtherPrefabs;
+    [Header("Identify Layers")]
+    public bool SeaPlaneIdentifier;
+    public GameObject SeaPlaneLocateModel;
+    [Range(0,8)]
+    public int minimumNeighbours;
     [Header("Region Colors")]
     public TerrainType[] regions;
 
@@ -69,6 +74,10 @@ public class MapGenerator : MonoBehaviour
             MeshData meshData = MeshGenerator.GenerateTerrainMesh(noiseMap, MeshHeight);
             mapDisplay.drawMesh(meshData);
             placeObjects(meshData);
+            if (SeaPlaneIdentifier)
+            {
+                detectSeaPlane(meshData);
+            }            
             // placeObjects(meshData, (MapWidth*MapLength)-1);
             // placeObjects(meshData, (MapWidth)-1);
             // placeObjects(meshData, MapWidth);
@@ -152,13 +161,13 @@ public class MapGenerator : MonoBehaviour
             float z = md.vertices[val].z;
             float y = md.vertices[val].y;
 
-            float originalX = (100 * (x-0.5f));
+            float originalX = 100 * (x-0.5f);
             float originalZ = 100 * (z-0.5f);
 
             if (y > 11 && m < (int)(treeCountNumber[treeCount]))
             {
                 int vegIndex = rand.Next(TreePrefabs.Length);
-                GameObject go = Instantiate(TreePrefabs[vegIndex], new Vector3(originalX, (50 * y)-10, originalZ), Quaternion.identity);
+                GameObject go = Instantiate(TreePrefabs[vegIndex], new Vector3(originalX, (50 * y), originalZ), Quaternion.identity);
                 go.transform.localScale = go.transform.localScale * 10;
                 go.transform.parent = GameObject.Find("Vegitation").transform;
                 m++;
@@ -172,5 +181,38 @@ public class MapGenerator : MonoBehaviour
             }
 
         }
+
+    }
+
+    public void detectSeaPlane(MeshData md){
+        for (int g = 0; g < MapLength*MapWidth;g++){
+            float x = md.vertices[g].x;
+            float z = md.vertices[g].z;
+            float y = md.vertices[g].y;
+
+            float originalX = 100 * (x + 0f);
+            float originalZ = 100 * (z + 0f);
+
+            if(y<12 && y>=10 && getNeighbourSeaPlaneCount(md,g)>minimumNeighbours){
+                GameObject go = Instantiate(SeaPlaneLocateModel, new Vector3(originalX, (50 * y) - 10, originalZ), Quaternion.identity);
+                go.transform.localScale = go.transform.localScale * 5;
+                go.transform.parent = GameObject.Find("OtherObjects").transform;
+            }
+        }
+    }
+
+    public int getNeighbourSeaPlaneCount(MeshData md, int index){
+        int count = 0;
+        if (index % MapWidth != 0 && index % MapWidth != MapWidth - 1 && index > MapWidth && index < (MapLength - 1) * MapWidth) {
+            if (md.vertices[index - MapWidth - 1].y < 10) { count++; }
+            if (md.vertices[index - MapWidth].y < 10) { count++; }
+            if (md.vertices[index - MapWidth + 1].y < 10) { count++; }
+            if (md.vertices[index - 1].y < 10) { count++; }
+            if (md.vertices[index + 1].y < 10) { count++; }
+            if (md.vertices[index + MapWidth - 1].y < 10) { count++; }
+            if (md.vertices[index + MapWidth].y < 10) { count++; }
+            if (md.vertices[index + MapWidth + 1].y < 10) { count++; }
+        }
+        return count;
     }
 }
