@@ -32,19 +32,22 @@ Octaves | Changes the number of vertices on the mesh. High value creates a more 
 Persistance | <img src="https://github.com/chamikaCN/Random-Island-Generator/blob/master/ReadMe%20Contents/Persistance.gif" height="150px" alt="Gif"/>
 Lacunarity | Increases the density of the perlin noise gradient change
 Offset | Change the area selected from the noise map.
-<br/>
+</br>
 <p align="center">
   <img src="https://github.com/chamikaCN/Random-Island-Generator/blob/master/ReadMe%20Contents/gen%20objects.PNG" height="300px" alt="Gif"/>
 </br><i>generate objects in the inspecter</i>
 </p>
 Parameters in the Generate Objects section are apllied only if the selected Draw Mode is Object Map .
 Land objects(trees, rocks etc.) are generated on the ground at the respective points while sea objects(ship wrecks, boulders etc.) area generated on sea level. All the prefered models shoul be added to the script as Prefabs and objects will be generated depending on the selected count randomly.
-<br/>
+</br>
+
 <p align="center">
+  </br>
   <img src="https://github.com/chamikaCN/Random-Island-Generator/blob/master/ReadMe%20Contents/Region%20colours.PNG" height="300px" alt="Gif"/>
   <img src="https://github.com/chamikaCN/Random-Island-Generator/blob/master/ReadMe%20Contents/Colour%20map.PNG" height="300px" alt="Gif"/>
 </br><i>region selector in the inspector and colour map </i>
 </p>
+
 Region colours section is relevent to the colour map. All the area in between the indicated height and the previous height level will be coloured in that particular colour. blend colours option will mix the colour with previous region's colour. 
 
 
