@@ -11,6 +11,8 @@ In ***Random-Island-Generator*** a region coloured 2d map and a 3d mesh of the l
 
 ### Parameters
 
+Following parameters can be adjusted in the ***Random-Island-Generator*** to change the criterias of the map being rendered.
+
 Parameter | Effect 
 --------- | ------
 Draw Mode | Noise Map - Resulting Height map from perlin noise is displayed along with Mesh<br> Colour Map - Regions are coloured as defined in the 'regions sector' in the script<br> Object Map - Vegitation and other objects can be generated on the mesh
@@ -18,6 +20,16 @@ Mesh Height |
 Seed | The map will be change for diffrent seeds
 Scale |
 Auto Update | Update every change in inspector with out clicking Generate button
-Fall-off | This causes the landmasses on the edges of the map reduce height ensuring the created land will be a set of islands with a clear sea path around them.
-Fall-off Value | Intensity of the fall-off effect. Low value generates a small island at the center of the map.
-Octaves | changes the number of vertices on the mesh. High value creates a more detailed landscapes but use slightly more processing.
+Fall-off | This causes the landmasses on the edges of the map reduce height ensuring the created land will be a set of islands with a clear sea path around them
+Fall-off Value | Intensity of the fall-off effect. Low value generates a small island at the center of the map
+Octaves | Changes the number of vertices on the mesh. High value creates a more detailed landscapes but use slightly more processing
+Persistance | dhxhdh
+Lacunarity | dfbsdbsdfbfb
+Offset | Change the area selected from the noise map.
+<br/>
+Parameters in the *Generate objects* section are apllied only if the selected *Draw Mode* is **Object Map**.
+Land objects(trees, rocks etc.) are generated on the ground at the respective points while sea objects(ship wrecks, boulders etc.) area generated on sea level. All the prefered models shoul be added to the script as Prefabs and objects will be generated depending on the selected count randomly.
+<br/>
+Region colours section is relevent to the colour map. All the area in between the indicated height and the previous height level will be coloured in that particular colour. blend colours option will mix the colour with previous region's colour. 
+
+
