@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class MapGenerator : MonoBehaviour
 {
-    public enum DrawMode { NoiseMap, ColorMap, Mesh, Object };
+    public enum DrawMode { NoiseMap, ColorMap, ObjectMap };
     public DrawMode drawMode;
     [Range(18, 28)]
     public int MeshHeight;
@@ -23,19 +23,19 @@ public class MapGenerator : MonoBehaviour
     public float Lacunarity;
     public Vector2 Offset;
     [Header("Generate Objects")]
-    public bool Trees;
+    public TreeCount LandObjectCount;
     public enum TreeCount { None, Low, Medium, High };
-    public TreeCount treeCount;
     Hashtable treeCountNumber = new Hashtable()
                 {{ TreeCount.None, 0 }, { TreeCount.Low, 40 }, { TreeCount.Medium, 90 }, { TreeCount.High, 200 }};
 
-    public GameObject[] TreePrefabs;
-    public bool Others;
+    public GameObject[] LandPrefabs;
+    [Space(0.5f)]
+    public OthersCount SeaObjectCount;
     public enum OthersCount { None, Low, Medium, High };
-    public OthersCount otherCount;
+
     Hashtable otherCountNumber = new Hashtable()
                 {{ OthersCount.None, 0 }, { OthersCount.Low, 10 }, { OthersCount.Medium, 22 }, { OthersCount.High, 50 }};
-    public GameObject[] OtherPrefabs;
+    public GameObject[] SeaPrefabs;
     [Header("Region Colors")]
     public TerrainType[] regions;
 
@@ -43,7 +43,7 @@ public class MapGenerator : MonoBehaviour
     public void GenerateMap()
     {
         clearPlacedObjects();
-        float[,] noiseMap = generateNoiseMap(MapLength, MapWidth, Seed, Scale, Octaves, Persistance, Lacunarity, Offset);
+        float[,] noiseMap =generateNoiseMap(MapLength, MapWidth, Seed, Scale, Octaves, Persistance, Lacunarity, Offset);
 
         if (FallOff) { AddFalloffEfect(noiseMap); }
         MapDisplay mapDisplay = FindObjectOfType<MapDisplay>();
@@ -51,18 +51,14 @@ public class MapGenerator : MonoBehaviour
         if (drawMode == DrawMode.NoiseMap)
         {
             mapDisplay.drawTexture(TextureGenerator.heightMapToTexture(noiseMap, MapWidth, MapLength));
+            mapDisplay.drawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap, MeshHeight));
         }
         else if (drawMode == DrawMode.ColorMap)
         {
             mapDisplay.drawTexture(TextureGenerator.colorMapToTexture(noiseMap, MapWidth, MapLength, regions, MeshHeight));
-        }
-        else if (drawMode == DrawMode.Mesh)
-        {
-            Texture2D texture = TextureGenerator.colorMapToTexture(noiseMap, MapWidth, MapLength, regions, MeshHeight);
-            mapDisplay.drawTexture(texture);
             mapDisplay.drawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap, MeshHeight));
         }
-        else if (drawMode == DrawMode.Object)
+        else if (drawMode == DrawMode.ObjectMap)
         {
             Texture2D texture = TextureGenerator.colorMapToTexture(noiseMap, MapWidth, MapLength, regions, MeshHeight);
             mapDisplay.drawTexture(texture);
@@ -74,6 +70,11 @@ public class MapGenerator : MonoBehaviour
 
     public float[,] generateNoiseMap(int length, int width, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset)
     {
+
+        GameObject water = GameObject.Find("Water");
+        water.transform.localScale = new Vector3(10 * MapWidth, 1, 10 * MapLength);
+        GameObject walls = GameObject.Find("Walls");
+        walls.transform.localScale = new Vector3(0.01f * MapWidth, 1, 0.01f * MapLength);
         float[,] noiseMap = new float[width, length];
 
         System.Random ran = new System.Random(seed);
@@ -154,8 +155,8 @@ public class MapGenerator : MonoBehaviour
 
     public void AddFalloffEfect(float[,] nMap)
     {
-        int length = nMap.GetLength(0);
-        int width = nMap.GetLength(1);
+        int length = nMap.GetLength(1);
+        int width = nMap.GetLength(0);
         for (int z = 0; z < length; z++)
         {
             for (int x = 0; x < width; x++)
@@ -199,9 +200,9 @@ public class MapGenerator : MonoBehaviour
     {
         System.Random rand = new System.Random();
         int m = 0, n = 0;
-        while (m < (int)(treeCountNumber[treeCount]) || n < (int)(otherCountNumber[otherCount]))
+        while (m < (int)(treeCountNumber[LandObjectCount]) || n < (int)(otherCountNumber[SeaObjectCount]))
         {
-            int val = rand.Next(10000);
+            int val = rand.Next(MapLength*MapWidth);
             float x = md.vertices[val].x;
             float z = md.vertices[val].z;
             float y = md.vertices[val].y;
@@ -209,18 +210,18 @@ public class MapGenerator : MonoBehaviour
             float originalX = 100 * (x - 0.5f);
             float originalZ = 100 * (z - 0.5f);
 
-            if (y > 11 && m < (int)(treeCountNumber[treeCount]))
+            if (y > 11 && m < (int)(treeCountNumber[LandObjectCount]))
             {
-                int vegIndex = rand.Next(TreePrefabs.Length);
-                GameObject go = Instantiate(TreePrefabs[vegIndex], new Vector3(originalX, (50 * y), originalZ), Quaternion.identity);
+                int vegIndex = rand.Next(LandPrefabs.Length);
+                GameObject go = Instantiate(LandPrefabs[vegIndex], new Vector3(originalX, (50 * y), originalZ), Quaternion.identity);
                 go.transform.localScale = go.transform.localScale * 10;
                 go.transform.parent = GameObject.Find("Vegitation").transform;
                 m++;
             }
-            else if (y < 10 && n < (int)(otherCountNumber[otherCount]))
+            else if (y < 10 && n < (int)(otherCountNumber[SeaObjectCount]))
             {
-                int otherIndex = rand.Next(OtherPrefabs.Length);
-                GameObject go = Instantiate(OtherPrefabs[otherIndex], new Vector3(originalX, (50 * 10) - 10, originalZ), Quaternion.identity);
+                int otherIndex = rand.Next(SeaPrefabs.Length);
+                GameObject go = Instantiate(SeaPrefabs[otherIndex], new Vector3(originalX, (50 * 10) - 10, originalZ), Quaternion.identity);
                 go.transform.localScale = go.transform.localScale * 10;
                 go.transform.parent = GameObject.Find("OtherObjects").transform;
                 n++;
